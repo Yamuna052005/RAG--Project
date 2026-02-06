@@ -8,11 +8,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-from langchain_google_genai import (
-    GoogleGenerativeAIEmbeddings,
-    ChatGoogleGenerativeAI,
-)
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
@@ -37,18 +35,14 @@ def split_into_chunks(text):
     chunks = text_splitter.split_text(text)
     return chunks
 def build_faiss_index(chunks):
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model = "models/embedding-001"
-    )
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     documents = [Document(page_content=chunk) for chunk in chunks]
     vector_store = FAISS.from_documents(documents, embeddings)
     vector_store.save_local("faiss_index")
     return vector_store
 def load_faiss_index():
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model = "models/embedding-001"
-    )
-    return FAISS.load_local("faiss_index", embeddings)
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    return FAISS.load_local("faiss_index", embeddings,allow_dangerous_deserialization=True)
 def get_prompt_and_llm():
     prompt_template = """
     You are a helpful AI assistant.
@@ -69,9 +63,9 @@ def get_prompt_and_llm():
     )
     
     llm = ChatGoogleGenerativeAI(
-        model="models/generative-001",
-        temperature=0.7,
-        max_output_tokens=1024
+        model="models/gemini-2.5-flash",
+        temperature=0.3
+        
     )
     return prompt, llm
 def answer_question(question):
